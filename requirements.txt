@@ -2,16 +2,12 @@ aiohappyeyeballs==2.3.2
 aiohttp==3.10.0
 aiosignal==1.3.1
 attrs==23.2.0
-<<<<<<< HEAD
 cachetools==5.4.0
-=======
->>>>>>> 41309de8c739795675bd833d69d5f6daec86c82d
 certifi==2024.7.4
 charset-normalizer==3.3.2
 discord==2.3.2
 discord.py==2.4.0
 frozenlist==1.4.1
-<<<<<<< HEAD
 git-filter-repo==2.45.0
 google-api-core==2.19.1
 google-api-python-client==2.140.0
@@ -35,11 +31,5 @@ requests==2.32.3
 requests-oauthlib==2.0.0
 rsa==4.9
 uritemplate==4.1.1
-=======
-idna==3.7
-multidict==6.0.5
-python-dotenv==1.0.1
-requests==2.32.3
->>>>>>> 41309de8c739795675bd833d69d5f6daec86c82d
 urllib3==2.2.2
 yarl==1.9.4
