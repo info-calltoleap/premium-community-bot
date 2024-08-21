@@ -85,7 +85,7 @@ async def on_member_join(member):
             matched_row = values[matched_row_index]
             if len(matched_row) > 3 and matched_row[3].strip() == 'used':  # Column D is Status
                 await dm_channel.send(
-                    "Sorry, this email has already been used. Please check your email or contact our support team."
+                    "Sorry, this email has already been used. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
                 )
                 logger.info(f"Email {email} has already been used.")
             else:
@@ -114,7 +114,7 @@ async def on_member_join(member):
                     logger.warning("Role 'PrivateChannelAccess' not found.")
         else:
             await dm_channel.send(
-                "Sorry, your verification failed. Please check if you have entered the correct email or contact our customer service."
+                "Sorry, your verification failed. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
             )
             logger.warning(f"Email {email} not found in the list.")
 
