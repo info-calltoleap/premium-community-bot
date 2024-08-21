@@ -89,7 +89,7 @@ async def on_member_join(member):
                 )
                 logger.info(f"Email {email} has already been used.")
             else:
-                role = discord.utils.get(member.guild.roles, name='Premium Member')
+                role = discord.utils.get(member.guild.roles, name='Trade Alerts')
                 if role:
                     await member.add_roles(role)
                     await dm_channel.send(
@@ -110,8 +110,8 @@ async def on_member_join(member):
                     sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
                     logger.info(f"Updated email {email} as used in Google Sheets.")
                 else:
-                    await dm_channel.send("Role 'Premium Member' not found.")
-                    logger.warning("Role 'Premium Member' not found.")
+                    await dm_channel.send("Role 'Trade Alerts' not found.")
+                    logger.warning("Role 'Trade Alerts' not found.")
         else:
             await dm_channel.send(
                 "Sorry, your verification failed. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
