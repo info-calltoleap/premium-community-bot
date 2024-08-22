@@ -133,17 +133,20 @@ async def on_member_join(member):
 async def check_cancellation_emails():
     while True:
         try:
-            # 讀取 Google Sheets 中的取消訂閱電子郵件
+            # 重新获取 Google Sheets 服务实例
+            sheet = service.spreadsheets()
+
+            # 读取消订订阅的电子邮件
             cancellation_range = 'Sheet1!H2:J'
             cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
             cancellation_values = cancellation_result.get('values', [])
 
             if cancellation_values:
                 for cancel_row in cancellation_values:
-                    if len(cancel_row) > 2:  # 確保有Email US欄位
+                    if len(cancel_row) > 2:  # 确保有Email US栏位
                         cancel_email = cancel_row[2].strip()
 
-                        # 在主要列表中找到匹配的電子郵件
+                        # 在主要列表中找到匹配的电子邮件
                         email_matched_index = None
                         for i, row in enumerate(values):
                             if len(row) > 2 and row[2].strip() == cancel_email:  # Column C 是 Email
@@ -153,14 +156,14 @@ async def check_cancellation_emails():
                         if email_matched_index is not None:
                             matched_row = values[email_matched_index]
 
-                            # 移除"used"狀態
+                            # 移除"used"状态
                             if len(matched_row) > 3 and matched_row[3].strip() == 'used':
-                                matched_row[3] = ''  # 清除狀態
+                                matched_row[3] = ''  # 清除状态
 
-                            # 取得 Discord ID 並移除角色
+                            # 获取 Discord ID 并移除角色
                             if len(matched_row) > 4 and matched_row[4].strip():
                                 discord_id = int(matched_row[4].strip())
-                                guild = client.get_guild(768962332524937258)  # 使用你的伺服器 ID
+                                guild = client.get_guild(768962332524937258)  # 使用你的服务器 ID
                                 member = guild.get_member(discord_id)
 
                                 if member:
@@ -177,7 +180,7 @@ async def check_cancellation_emails():
                             sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
                             logger.info(f"Cleared 'used' status and updated Discord ID for {cancel_email}.")
 
-            await asyncio.sleep(21600)  # 每6小時檢查一次
+            await asyncio.sleep(21600)  # 每6小时检查一次
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
