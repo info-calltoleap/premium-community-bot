@@ -136,6 +136,10 @@ async def check_cancellation_emails():
             # 重新获取 Google Sheets 服务实例
             sheet = service.spreadsheets()
 
+            # 获取所有数据行
+            result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
+            values = result.get('values', [])
+
             # 读取消订订阅的电子邮件
             cancellation_range = 'Sheet1!H2:J'
             cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
@@ -180,7 +184,7 @@ async def check_cancellation_emails():
                             sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
                             logger.info(f"Cleared 'used' status and updated Discord ID for {cancel_email}.")
 
-            await asyncio.sleep(10)  # 每6小时检查一次
+            await asyncio.sleep(60)  # 每1分钟检查一次
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
