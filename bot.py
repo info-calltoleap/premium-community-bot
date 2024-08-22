@@ -110,10 +110,15 @@ async def on_member_join(member):
                     else:
                         matched_row[4] = str(member.id)  # 更新 Discord ID
 
+                    # 獲取取消訂閱的資料
+                    cancellation_range = 'Sheet1!H2:J'
+                    cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
+                    cancellation_values = cancellation_result.get('values', [])
+
                     # 檢查第十列的 email 是否匹配
-                    for i, cancel_row in enumerate(values):
+                    for j, cancel_row in enumerate(cancellation_values):
                         if len(cancel_row) > 2 and cancel_row[2].strip() == email:  # 第十列是 Email
-                            cancel_range = f'Sheet1!H{i + 2}:J{i + 2}'
+                            cancel_range = f'Sheet1!H{j + 2}:J{j + 2}'
                             clear_body = {
                                 'values': [['', '', '']]  # 清空第八到第十列的資料
                             }
