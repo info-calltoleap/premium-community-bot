@@ -5,6 +5,7 @@ from googleapiclient.discovery import build
 import os
 import logging
 from dotenv import load_dotenv
+import asyncio
 
 # 載入 .env 文件
 load_dotenv()
@@ -30,7 +31,7 @@ client = commands.Bot(command_prefix='!', intents=intents)
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'premium-community-bot-api2-16d62f6a46ef.json'
 spreadsheet_id = '1qEMc17L8-5GIkmuJs9qvJrhXIchg3ytJQhtOJfoknq0'
-range_name = 'Sheet1!A2:D'  # 從第二行開始讀取數據
+range_name = 'Sheet1!A2:E'  # 從第二行開始讀取數據
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
@@ -39,6 +40,7 @@ service = build('sheets', 'v4', credentials=credentials)
 @client.event
 async def on_ready():
     logger.info(f'Logged in as {client.user}!')
+    client.loop.create_task(check_cancellation_emails())
 
 @client.event
 async def on_member_join(member):
@@ -102,13 +104,18 @@ async def on_member_join(member):
                         matched_row.append('used')  # 確保 matched_row 有足夠的長度
                     else:
                         matched_row[3] = 'used'
-                    
-                    update_range = f'Sheet1!A{matched_row_index + 2}:D{matched_row_index + 2}'
+
+                    if len(matched_row) < 5:
+                        matched_row.append(str(member.id))  # 添加 Discord ID 到第五列
+                    else:
+                        matched_row[4] = str(member.id)  # 更新 Discord ID
+
+                    update_range = f'Sheet1!A{matched_row_index + 2}:E{matched_row_index + 2}'
                     body = {
                         'values': [matched_row]
                     }
                     sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
-                    logger.info(f"Updated email {email} as used in Google Sheets.")
+                    logger.info(f"Updated email {email} as used and added Discord ID {member.id} in Google Sheets.")
                 else:
                     await dm_channel.send("Role 'Trade Alerts' not found.")
                     logger.warning("Role 'Trade Alerts' not found.")
@@ -121,5 +128,57 @@ async def on_member_join(member):
     except Exception as e:
         await dm_channel.send("An error occurred while processing your request.")
         logger.error(f"Error occurred: {e}")
+
+# 設置一個任務來定期檢查取消訂閱的電子郵件
+async def check_cancellation_emails():
+    while True:
+        try:
+            # 讀取 Google Sheets 中的取消訂閱電子郵件
+            cancellation_range = 'Sheet1!H2:J'
+            cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
+            cancellation_values = cancellation_result.get('values', [])
+
+            if cancellation_values:
+                for cancel_row in cancellation_values:
+                    if len(cancel_row) > 2:  # 確保有Email US欄位
+                        cancel_email = cancel_row[2].strip()
+
+                        # 在主要列表中找到匹配的電子郵件
+                        email_matched_index = None
+                        for i, row in enumerate(values):
+                            if len(row) > 2 and row[2].strip() == cancel_email:  # Column C 是 Email
+                                email_matched_index = i
+                                break
+
+                        if email_matched_index is not None:
+                            matched_row = values[email_matched_index]
+
+                            # 移除"used"狀態
+                            if len(matched_row) > 3 and matched_row[3].strip() == 'used':
+                                matched_row[3] = ''  # 清除狀態
+
+                            # 取得 Discord ID 並移除角色
+                            if len(matched_row) > 4 and matched_row[4].strip():
+                                discord_id = int(matched_row[4].strip())
+                                guild = client.get_guild(768962332524937258)  # 使用你的伺服器 ID
+                                member = guild.get_member(discord_id)
+
+                                if member:
+                                    role = discord.utils.get(guild.roles, name='Trade Alerts')
+                                    if role:
+                                        await member.remove_roles(role)
+                                        logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
+
+                            # 更新 Google Sheets
+                            update_range = f'Sheet1!A{email_matched_index + 2}:E{email_matched_index + 2}'
+                            body = {
+                                'values': [matched_row]
+                            }
+                            sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
+                            logger.info(f"Cleared 'used' status and updated Discord ID for {cancel_email}.")
+
+            await asyncio.sleep(21600)  # 每6小時檢查一次
+        except Exception as e:
+            logger.error(f"Error checking cancellation emails: {e}")
 
 client.run(DISCORD_TOKEN)
