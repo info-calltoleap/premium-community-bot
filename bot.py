@@ -200,7 +200,7 @@ async def check_cancellation_emails():
                             sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
                             logger.info(f"Cleared 'used' status and updated Discord ID for {cancel_email}.")
 
-            await asyncio.sleep(60)  # 每1分钟检查一次
+            await asyncio.sleep(86400)  # 每天检查一次
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
