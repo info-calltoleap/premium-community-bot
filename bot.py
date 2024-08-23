@@ -155,7 +155,7 @@ async def check_cancellation_emails():
             cancellation_values = cancellation_result.get('values', [])
 
             if cancellation_values:
-                for cancel_row in cancellation_values:
+                for j, cancel_row in enumerate(cancellation_values):
                     if len(cancel_row) > 2:  # 确保有Email US栏位
                         cancel_email = cancel_row[2].strip()
 
@@ -169,31 +169,38 @@ async def check_cancellation_emails():
                         if email_matched_index is not None:
                             matched_row = values[email_matched_index]
 
-                            # 移除"used"状态并清除前五列的信息
-                            if len(matched_row) > 3 and matched_row[3].strip() == 'used':
-                                matched_row = ['', '', '', '', '']  # 清空该行的前五列
+                            # 删除第十列的email匹配的行的第八列到第十列的数据
+                            cancel_range = f'Sheet1!H{j + 2}:J{j + 2}'
+                            clear_body = {
+                                'values': [['', '', '']]  # 清空第八到第十列的資料
+                            }
+                            sheet.values().update(spreadsheetId=spreadsheet_id, range=cancel_range, valueInputOption='RAW', body=clear_body).execute()
+                            logger.info(f"Cleared data for cancellation email {cancel_email} in columns H-J.")
 
-                                # 获取 Discord ID 并移除角色
-                                if len(matched_row) > 4 and matched_row[4].strip():
-                                    discord_id = int(matched_row[4].strip())
-                                    guild = client.get_guild(768962332524937258)  # 使用你的服务器 ID
-                                    member = guild.get_member(discord_id)
+                            # 删除匹配到的行的第一列到第五列的数据
+                            matched_row = ['', '', '', '', '']  # 清空該行的前五列
 
-                                    if member:
-                                        role = discord.utils.get(guild.roles, name='Trade Alerts')
-                                        if role:
-                                            await member.remove_roles(role)
-                                            logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
+                            # 获取 Discord ID 并移除角色
+                            if len(row) > 4 and row[4].strip():
+                                discord_id = int(row[4].strip())
+                                guild = client.get_guild(768962332524937258)  # 使用你的服务器 ID
+                                member = guild.get_member(discord_id)
 
-                                # 更新 Google Sheets
-                                update_range = f'Sheet1!A{email_matched_index + 2}:E{email_matched_index + 2}'
-                                body = {
-                                    'values': [matched_row]
-                                }
-                                sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
-                                logger.info(f"Cleared all data for {cancel_email} in columns A-E.")
+                                if member:
+                                    role = discord.utils.get(guild.roles, name='Trade Alerts')
+                                    if role:
+                                        await member.remove_roles(role)
+                                        logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
 
-            await asyncio.sleep(86400)  # 每天检查一次
+                            # 更新 Google Sheets
+                            update_range = f'Sheet1!A{email_matched_index + 2}:E{email_matched_index + 2}'
+                            body = {
+                                'values': [matched_row]
+                            }
+                            sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
+                            logger.info(f"Cleared all data for {cancel_email} in columns A-E.")
+
+            await asyncio.sleep(60)  # 每分钟检查一次
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
