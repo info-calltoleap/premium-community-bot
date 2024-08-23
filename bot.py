@@ -85,6 +85,11 @@ async def on_member_join(member):
 
         if matched_row_index is not None:
             matched_row = values[matched_row_index]
+            
+            # 確保 matched_row 的長度足夠
+            if len(matched_row) < 5:
+                matched_row.extend([''] * (5 - len(matched_row)))
+
             if len(matched_row) > 3 and matched_row[3].strip() == 'used':  # Column D is Status
                 await dm_channel.send(
                     "Sorry, this email has already been used. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
@@ -100,7 +105,7 @@ async def on_member_join(member):
                     logger.info(f"Email {email} verified and role added.")
 
                     # 更新 Google Sheets
-                    matched_row[3] = 'used'  # 标记为已使用
+                    matched_row[3] = 'used'  # 標記為已使用
                     matched_row[4] = str(member.id)  # 添加 Discord ID
 
                     # 獲取取消訂閱的資料
@@ -169,6 +174,10 @@ async def check_cancellation_emails():
                         if email_matched_index is not None:
                             matched_row = values[email_matched_index]
 
+                            # 確保 matched_row 的長度足夠以清空数据
+                            if len(matched_row) < 5:
+                                matched_row.extend([''] * (5 - len(matched_row)))
+
                             # 删除第十列的email匹配的行的第八列到第十列的数据
                             cancel_range = f'Sheet1!H{j + 2}:J{j + 2}'
                             clear_body = {
@@ -177,7 +186,7 @@ async def check_cancellation_emails():
                             sheet.values().update(spreadsheetId=spreadsheet_id, range=cancel_range, valueInputOption='RAW', body=clear_body).execute()
                             logger.info(f"Cleared data for cancellation email {cancel_email} in columns H-J.")
 
-                            # 删除匹配到的行的第一列到第五列的数据
+                            # 清空匹配到的行的第一列到第五列的数据
                             matched_row = ['', '', '', '', '']  # 清空該行的前五列
 
                             # 获取 Discord ID 并移除角色
