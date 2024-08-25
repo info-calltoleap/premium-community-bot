@@ -31,7 +31,7 @@ client = commands.Bot(command_prefix='!', intents=intents)
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'premium-community-bot-api2-16d62f6a46ef.json'
 spreadsheet_id = '1qEMc17L8-5GIkmuJs9qvJrhXIchg3ytJQhtOJfoknq0'
-range_name = 'Sheet1!A2:E'  # 從第二行開始讀取數據
+range_name = 'Sheet1!A3:E'  # 從第三行開始讀取數據
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
