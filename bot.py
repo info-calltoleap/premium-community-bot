@@ -46,7 +46,7 @@ async def on_ready():
 async def on_member_join(member):
     try:
         # 設定公共頻道ID
-        channel_id = 1277310796522848266  # 使用您的公共頻道ID
+        channel_id = 1277314657698451506  # 使用您的公共頻道ID
         channel = client.get_channel(channel_id)
 
         if channel is None:
