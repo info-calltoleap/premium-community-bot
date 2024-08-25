@@ -63,12 +63,12 @@ async def on_member_join(member):
         def check(msg):
             logger.info(f"Received message content: '{msg.content}' from {msg.author} in channel {msg.channel}")
             return msg.author == member and msg.channel == channel
-    
+
         # 等待使用者回應
         message = await client.wait_for('message', timeout=120.0, check=check)
 
-        email = message.content
-        logger.info(f"Raw email content: '{email}'")  # Debug output
+        email = message.content.strip()
+        logger.info(f"Processed email: '{email}'")  # Debug output
 
         # 發送確認收到的訊息
         await channel.send(
@@ -80,9 +80,11 @@ async def on_member_join(member):
         result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
         values = result.get('values', [])
 
+        logger.info(f"Google Sheets data: {values}")
+
         matched_row_index = None
         for i, row in enumerate(values):
-            if len(row) > 2 and row[2].strip() == email:  # Column C is Email
+            if len(row) > 2 and row[2].strip().lower() == email.lower():  # Column C is Email
                 matched_row_index = i
                 break
 
@@ -118,7 +120,7 @@ async def on_member_join(member):
 
                     # 檢查第十列的 email 是否匹配
                     for j, cancel_row in enumerate(cancellation_values):
-                        if len(cancel_row) > 2 and cancel_row[2].strip() == email:  # 第十列是 Email
+                        if len(cancel_row) > 2 and cancel_row[2].strip().lower() == email.lower():  # 第十列是 Email
                             cancel_range = f'Sheet1!H{j + 2}:J{j + 2}'
                             clear_body = {
                                 'values': [['', '', '']]  # 清空第八到第十列的資料
@@ -170,7 +172,7 @@ async def check_cancellation_emails():
                         # 在主要列表中找到匹配的电子邮件
                         email_matched_index = None
                         for i, row in enumerate(values):
-                            if len(row) > 2 and row[2].strip() == cancel_email:  # Column C 是 Email
+                            if len(row) > 2 and row[2].strip().lower() == cancel_email.lower():  # Column C 是 Email
                                 email_matched_index = i
                                 break
 
