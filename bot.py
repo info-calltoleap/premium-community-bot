@@ -61,13 +61,14 @@ async def on_member_join(member):
         logger.info(f"Sent message to channel {channel.name} with verification instructions for {member.name}.")
 
         def check(msg):
+            logger.info(f"Received message content: '{msg.content}' from {msg.author} in channel {msg.channel}")
             return msg.author == member and msg.channel == channel
-
+    
         # 等待使用者回應
         message = await client.wait_for('message', timeout=120.0, check=check)
 
-        email = message.content.strip()
-        logger.info(f"Received email: {email}")  # Debug output
+        email = message.content
+        logger.info(f"Raw email content: '{email}'")  # Debug output
 
         # 發送確認收到的訊息
         await channel.send(
