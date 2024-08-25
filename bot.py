@@ -45,21 +45,23 @@ async def on_ready():
 @client.event
 async def on_member_join(member):
     try:
-        # 檢查是否有 DM Channel
-        dm_channel = member.dm_channel
-        if dm_channel is None:
-            dm_channel = await member.create_dm()
+        # 設定公共頻道ID
+        channel_id = 1277310796522848266  # 使用您的公共頻道ID
+        channel = client.get_channel(channel_id)
 
-        # 發送歡迎訊息
-        await dm_channel.send(
-            "Welcome to our Discord! This is the verification bot for the Premium Members Hub. "
+        if channel is None:
+            logger.error(f"Channel with ID {channel_id} not found.")
+            return
+
+        # 發送歡迎訊息並標記新使用者
+        await channel.send(
+            f"Welcome to our Discord, {member.mention}! This is the verification bot for the Premium Members Hub. "
             "If your subscription plan includes this service, please reply with the email address you used to purchase the plan."
         )
-        logger.info(f"Sent DM to {member.name} with verification instructions.")
+        logger.info(f"Sent message to channel {channel.name} with verification instructions for {member.name}.")
 
         def check(msg):
-            logger.info(f"Received message: {msg.content}")  # Debug output
-            return msg.author == member and msg.channel == dm_channel
+            return msg.author == member and msg.channel == channel
 
         # 等待使用者回應
         message = await client.wait_for('message', timeout=120.0, check=check)
@@ -68,8 +70,8 @@ async def on_member_join(member):
         logger.info(f"Received email: {email}")  # Debug output
 
         # 發送確認收到的訊息
-        await dm_channel.send(
-            "Your message has been received. We are currently verifying it. Please wait a moment."
+        await channel.send(
+            f"{member.mention}, your message has been received. We are currently verifying it. Please wait a moment."
         )
 
         # 讀取 Google Sheets 資料
@@ -91,16 +93,16 @@ async def on_member_join(member):
                 matched_row.extend([''] * (5 - len(matched_row)))
 
             if len(matched_row) > 3 and matched_row[3].strip() == 'used':  # Column D is Status
-                await dm_channel.send(
-                    "Sorry, this email has already been used. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
+                await channel.send(
+                    f"{member.mention}, sorry, this email has already been used. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
                 )
                 logger.info(f"Email {email} has already been used.")
             else:
                 role = discord.utils.get(member.guild.roles, name='Trade Alerts')
                 if role:
                     await member.add_roles(role)
-                    await dm_channel.send(
-                        "Congratulations! Your verification has been successful. Welcome to our Premium Members Hub!"
+                    await channel.send(
+                        f"{member.mention}, congratulations! Your verification has been successful. Welcome to our Premium Members Hub!"
                     )
                     logger.info(f"Email {email} verified and role added.")
 
@@ -131,16 +133,16 @@ async def on_member_join(member):
                     sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
                     logger.info(f"Updated email {email} as used and added Discord ID {member.id} in Google Sheets.")
                 else:
-                    await dm_channel.send("Role 'Trade Alerts' not found.")
+                    await channel.send(f"{member.mention}, role 'Trade Alerts' not found.")
                     logger.warning("Role 'Trade Alerts' not found.")
         else:
-            await dm_channel.send(
-                "Sorry, your verification failed. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
+            await channel.send(
+                f"{member.mention}, sorry, your verification failed. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
             )
             logger.warning(f"Email {email} not found in the list.")
 
     except Exception as e:
-        await dm_channel.send("An error occurred while processing your request.")
+        await channel.send(f"{member.mention}, an error occurred while processing your request.")
         logger.error(f"Error occurred: {e}")
 
 # 設置一個任務來定期檢查取消訂閱的電子郵件
