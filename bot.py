@@ -56,7 +56,7 @@ async def on_member_join(member):
         # 發送歡迎訊息並標記新使用者
         await channel.send(
             f"Welcome to our Discord, {member.mention}! This is the verification bot for the Premium Members Hub. "
-            "If your subscription plan includes this service, please reply with the email address you used to purchase the plan."
+            "If your subscription plan includes the Premium Members Hub, please reply with the email address you used to purchase the plan on our website."
         )
         logger.info(f"Sent message to channel {channel.name} with verification instructions for {member.name}.")
 
