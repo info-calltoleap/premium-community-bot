@@ -55,10 +55,14 @@ async def on_message(message):
     if message.channel.id != channel_id:
         return
 
+    # 打印收到的消息内容（用于调试）
+    logger.info(f"Received message content: '{message.content}' from {message.author} in channel {message.channel}")
+
     # 判斷是否為有效的電子郵件
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-    if re.match(email_regex, message.content.strip()):
-        email = message.content.strip()
+    email = message.content.strip()  # 确保消息内容已被剥离空白字符
+
+    if re.match(email_regex, email):
         member = message.author
 
         await message.channel.send(
@@ -134,6 +138,7 @@ async def on_message(message):
             )
             logger.warning(f"Email {email} not found in the list.")
     else:
+        logger.warning(f"Invalid email format received: '{email}'")
         await message.channel.send(
             f"{message.author.mention}, please enter a valid email address for verification."
         )
