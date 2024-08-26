@@ -195,4 +195,35 @@ async def check_cancellation_emails():
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
+# 重置特定使用者的嘗試次數
+@client.command()
+@commands.has_permissions(administrator=True)
+async def reset_attempts(ctx, member: discord.Member):
+    user_id = str(member.id)
+    if user_id in attempts:
+        attempts[user_id] = 0
+        await ctx.send(f"{member.mention} 的嘗試次數已經被重置。")
+    else:
+        await ctx.send(f"{member.mention} 尚未進行任何驗證嘗試。")
+
+# 重置特定角色的所有成員的嘗試次數
+@client.command()
+@commands.has_permissions(administrator=True)
+async def reset_role_attempts(ctx, role_name: str):
+    # 獲取伺服器中的角色
+    role = discord.utils.get(ctx.guild.roles, name=role_name)
+    if not role:
+        await ctx.send(f"角色 `{role_name}` 不存在。")
+        return
+
+    # 遍歷角色中的所有成員，重置他們的測試次數
+    reset_count = 0
+    for member in role.members:
+        user_id = str(member.id)
+        if user_id in attempts:
+            attempts[user_id] = 0
+            reset_count += 1
+
+    await ctx.send(f"已重置角色 `{role_name}` 中 {reset_count} 位成員的測試次數。")
+
 client.run(DISCORD_TOKEN)
