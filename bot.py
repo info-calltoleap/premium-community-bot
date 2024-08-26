@@ -55,14 +55,18 @@ async def on_message(message):
     if message.channel.id != channel_id:
         return
 
-    # 打印收到的消息内容（用于调试）
-    logger.info(f"Received message content: '{message.content}' from {message.author} in channel {message.channel}")
+    # 打印收到的原始消息内容（用于调试）
+    logger.info(f"Raw message content: {repr(message.content)} from {message.author} in channel {message.channel}")
+
+    # 清理消息内容，移除不可见字符、换行符等
+    cleaned_content = message.content.strip().replace('\u200b', '').replace('\n', '').replace('\r', '')
+    cleaned_content = re.sub(r'\[.*?\]\(.*?\)', '', cleaned_content)  # 去除Markdown链接格式
+    logger.info(f"Cleaned message content: '{cleaned_content}'")
 
     # 判斷是否為有效的電子郵件
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-    email = message.content.strip()  # 确保消息内容已被剥离空白字符
-
-    if re.match(email_regex, email):
+    if re.match(email_regex, cleaned_content):
+        email = cleaned_content
         member = message.author
 
         await message.channel.send(
@@ -138,7 +142,7 @@ async def on_message(message):
             )
             logger.warning(f"Email {email} not found in the list.")
     else:
-        logger.warning(f"Invalid email format received: '{email}'")
+        logger.warning(f"Invalid email format received: '{cleaned_content}'")
         await message.channel.send(
             f"{message.author.mention}, please enter a valid email address for verification."
         )
