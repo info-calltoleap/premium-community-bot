@@ -195,7 +195,7 @@ async def check_cancellation_emails():
                                             await member.remove_roles(role)
                                             logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
                                         else:
-                                            logger.warning(f"User {member.name} does not have the 'Trade Alerts' role.")
+                                            logger.warning(f"User {member.name} does not have the 'Trade Alerts' role. Their current roles: {', '.join([r.name for r in member.roles])}")
                                             
                                         await asyncio.sleep(1)  # 延迟以确保角色状态已更新
 
