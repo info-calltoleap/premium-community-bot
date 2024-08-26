@@ -25,6 +25,7 @@ intents = discord.Intents.default()
 intents.messages = True  # 開啟訊息內容 intent
 intents.guilds = True
 intents.members = True  # 開啟成員相關 intent
+intents.message_content = True  # 确保启用了 message_content intent
 
 client = commands.Bot(command_prefix='!', intents=intents)
 
@@ -175,7 +176,7 @@ async def check_cancellation_emails():
                                 email_matched_index = i
                                 break
 
-                        if email_matched_index is not None:
+                        if email_matched_index is不 None:
                             matched_row = values[email_matched_index]
 
                             # 確保 matched_row 的長度足夠以清空数据
