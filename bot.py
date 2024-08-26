@@ -106,6 +106,7 @@ async def on_message(message):
                 role = discord.utils.get(member.guild.roles, name='Trade Alerts')
                 if role:
                     await member.add_roles(role)
+                    logger.info(f"Added 'Trade Alerts' role to {member.name}.")
                     await message.channel.send(
                         f"{member.mention}, congratulations! Your verification has been successful. Welcome to our Premium Members Hub!"
                     )
@@ -130,6 +131,9 @@ async def on_message(message):
                         'values': [matched_row]
                     }
                     sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
+
+                    await asyncio.sleep(1)  # 延迟以确保角色状态已更新
+
                 else:
                     await message.channel.send(f"{member.mention}, role 'Trade Alerts' not found.")
         else:
@@ -192,6 +196,8 @@ async def check_cancellation_emails():
                                             logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
                                         else:
                                             logger.warning(f"User {member.name} does not have the 'Trade Alerts' role.")
+                                            
+                                        await asyncio.sleep(1)  # 延迟以确保角色状态已更新
 
                                     await member.send(
                                         "Your subscription has been canceled. If you have any questions, please contact our support team at info@calltoleap.com"
