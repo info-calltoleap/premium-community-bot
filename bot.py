@@ -196,26 +196,25 @@ async def check_cancellation_emails():
                                 member = guild.get_member(discord_id)
 
                                 # 找到成員並移除角色
-if member:
-    role = discord.utils.get(guild.roles, name='Trade Alerts')
+                                if member:
+                                    role = discord.utils.get(guild.roles, name='Trade Alerts')
 
-    # 檢查角色是否存在於成員的角色列表中
-    if role and role in member.roles:
-        await member.remove_roles(role)
-        logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
-        
-        # 再次確認角色是否已被移除
-        await asyncio.sleep(5)  # 添加延遲以確保 Discord 有足夠時間處理角色變更
-        member_roles = [r.name for r in member.roles]
-        if role not in member.roles:
-            logger.info(f"Successfully confirmed that 'Trade Alerts' role has been removed from {member.name}.")
-        else:
-            logger.warning(f"'Trade Alerts' role is still present for {member.name} after trying to remove it. Current roles: {', '.join(member_roles)}")
-    else:
-        logger.warning(f"User {member.name} does not have the 'Trade Alerts' role or the role is not found.")
-else:
-    logger.warning(f"User with ID {discord_id} not found in the server.")
+                                    # 檢查角色是否存在於成員的角色列表中
+                                    if role and role in member.roles:
+                                        await member.remove_roles(role)
+                                        logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
 
+                                        # 再次確認角色是否已被移除
+                                        await asyncio.sleep(5)  # 添加延遲以確保 Discord 有足夠時間處理角色變更
+                                        member_roles = [r.name for r in member.roles]
+                                        if role not in member.roles:
+                                            logger.info(f"Successfully confirmed that 'Trade Alerts' role has been removed from {member.name}.")
+                                        else:
+                                            logger.warning(f"'Trade Alerts' role is still present for {member.name} after trying to remove it. Current roles: {', '.join(member_roles)}")
+                                    else:
+                                        logger.warning(f"User {member.name} does not have the 'Trade Alerts' role or the role is not found.")
+                                else:
+                                    logger.warning(f"User with ID {discord_id} not found in the server.")
 
                             update_range = f'Sheet1!A{email_matched_index + 3}:E{email_matched_index + 3}'
                             body = {
