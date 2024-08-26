@@ -6,6 +6,7 @@ import os
 import logging
 from dotenv import load_dotenv
 import asyncio
+import re
 
 # 載入 .env 文件
 load_dotenv()
@@ -43,35 +44,24 @@ async def on_ready():
     client.loop.create_task(check_cancellation_emails())
 
 @client.event
-async def on_member_join(member):
-    try:
-        # 設定公共頻道ID
-        channel_id = 1277314657698451506  # 使用您的公共頻道ID
-        channel = client.get_channel(channel_id)
+async def on_message(message):
+    # 確保不會回應機器人自己的消息
+    if message.author == client.user:
+        return
 
-        if channel is None:
-            logger.error(f"Channel with ID {channel_id} not found.")
-            return
+    # 設定公共頻道ID
+    channel_id = 1277314657698451506  # 使用您的公共頻道ID
 
-        # 發送歡迎訊息並標記新使用者
-        await channel.send(
-            f"Welcome to our Discord, {member.mention}! This is the verification bot for the Premium Members Hub. "
-            "If your subscription plan includes the Premium Members Hub, please reply with the email address you used to purchase the plan on our website."
-        )
-        logger.info(f"Sent message to channel {channel.name} with verification instructions for {member.name}.")
+    if message.channel.id != channel_id:
+        return
 
-        def check(msg):
-            logger.info(f"Received message content: '{msg.content}' from {msg.author} in channel {msg.channel}")
-            return msg.author == member and msg.channel == channel
-
-        # 等待使用者回應
-        message = await client.wait_for('message', timeout=120.0, check=check)
-
+    # 判斷是否為有效的電子郵件
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    if re.match(email_regex, message.content.strip()):
         email = message.content.strip()
-        logger.info(f"Processed email: '{email}'")  # Debug output
+        member = message.author
 
-        # 發送確認收到的訊息
-        await channel.send(
+        await message.channel.send(
             f"{member.mention}, your message has been received. We are currently verifying it. Please wait a moment."
         )
 
@@ -96,7 +86,7 @@ async def on_member_join(member):
                 matched_row.extend([''] * (5 - len(matched_row)))
 
             if len(matched_row) > 3 and matched_row[3].strip() == 'used':  # Column D is Status
-                await channel.send(
+                await message.channel.send(
                     f"{member.mention}, sorry, this email has already been used. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
                 )
                 logger.info(f"Email {email} has already been used.")
@@ -104,7 +94,7 @@ async def on_member_join(member):
                 role = discord.utils.get(member.guild.roles, name='Trade Alerts')
                 if role:
                     await member.add_roles(role)
-                    await channel.send(
+                    await message.channel.send(
                         f"{member.mention}, congratulations! Your verification has been successful. Welcome to our Premium Members Hub!"
                     )
                     logger.info(f"Email {email} verified and role added.")
@@ -136,17 +126,17 @@ async def on_member_join(member):
                     sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
                     logger.info(f"Updated email {email} as used and added Discord ID {member.id} in Google Sheets.")
                 else:
-                    await channel.send(f"{member.mention}, role 'Trade Alerts' not found.")
+                    await message.channel.send(f"{member.mention}, role 'Trade Alerts' not found.")
                     logger.warning("Role 'Trade Alerts' not found.")
         else:
-            await channel.send(
+            await message.channel.send(
                 f"{member.mention}, sorry, your verification failed. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
             )
             logger.warning(f"Email {email} not found in the list.")
-
-    except Exception as e:
-        await channel.send(f"{member.mention}, an error occurred while processing your request.")
-        logger.error(f"Error occurred: {e}")
+    else:
+        await message.channel.send(
+            f"{message.author.mention}, please enter a valid email address for verification."
+        )
 
 # 設置一個任務來定期檢查取消訂閱的電子郵件
 async def check_cancellation_emails():
