@@ -187,10 +187,17 @@ async def check_cancellation_emails():
                                 if member:
                                     role = discord.utils.get(guild.roles, name='Trade Alerts')
                                     if role:
-                                        await member.remove_roles(role)
-                                        await member.send(
-                                            "Your subscription has been canceled. If you have any questions, please contact our support team at info@calltoleap.com"
-                                        )
+                                        if role in member.roles:
+                                            await member.remove_roles(role)
+                                            logger.info(f"Removed 'Trade Alerts' role from {member.name}.")
+                                        else:
+                                            logger.warning(f"User {member.name} does not have the 'Trade Alerts' role.")
+
+                                    await member.send(
+                                        "Your subscription has been canceled. If you have any questions, please contact our support team at info@calltoleap.com"
+                                    )
+                                else:
+                                    logger.warning(f"User with ID {discord_id} not found in the server.")
 
                             update_range = f'Sheet1!A{email_matched_index + 3}:E{email_matched_index + 3}'
                             body = {
