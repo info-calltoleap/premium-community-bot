@@ -39,6 +39,9 @@ credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 service = build('sheets', 'v4', credentials=credentials)
 
+# 用戶嘗試次數記錄
+attempts = {}
+
 @client.event
 async def on_ready():
     logger.info(f'Logged in as {client.user}!')
@@ -62,9 +65,18 @@ async def on_message(message):
         email = cleaned_content
         member = message.author
 
-        await message.channel.send(
-            f"{member.mention}, your message has been received. We are currently verifying it. Please wait a moment."
-        )
+        # 限制嘗試次數
+        user_id = str(member.id)
+        if user_id not in attempts:
+            attempts[user_id] = 0
+
+        if attempts[user_id] >= 3:
+            await message.channel.send(
+                f"{member.mention}, you have reached the maximum number of attempts. Please contact our support team at info@calltoleap.com."
+            )
+            return
+
+        attempts[user_id] += 1
 
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=spreadsheet_id, range=range_name).execute()
@@ -78,7 +90,7 @@ async def on_message(message):
 
         if matched_row_index is not None:
             matched_row = values[matched_row_index]
-            
+
             if len(matched_row) < 5:
                 matched_row.extend([''] * (5 - len(matched_row)))
 
