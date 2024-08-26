@@ -176,7 +176,7 @@ async def check_cancellation_emails():
                                 email_matched_index = i
                                 break
 
-                        if email_matched_index is不 None:
+                        if email_matched_index is None:
                             matched_row = values[email_matched_index]
 
                             # 確保 matched_row 的長度足夠以清空数据
