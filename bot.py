@@ -8,38 +8,38 @@ from dotenv import load_dotenv
 import asyncio
 import re
 
-# 載入 .env 文件
+# Load .env file
 load_dotenv()
 
-# 讀取環境變數
+# Read environment variables
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 if DISCORD_TOKEN is None:
     raise ValueError("DISCORD_TOKEN is not set. Please check your .env file.")
 
-# 設定日誌
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 設定 Discord bot
+# Set up Discord bot
 intents = discord.Intents.default()
-intents.messages = True  # 開啟訊息內容 intent
+intents.messages = True  # Enable message content intent
 intents.guilds = True
-intents.members = True  # 開啟成員相關 intent
-intents.message_content = True  # 确保启用了 message_content intent
+intents.members = True  # Enable member-related intent
+intents.message_content = True  # Ensure message_content intent is enabled
 
 client = commands.Bot(command_prefix='!', intents=intents)
 
-# Google Sheets 設定
+# Google Sheets setup
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'premium-community-bot-api2-16d62f6a46ef.json'
 spreadsheet_id = '1qEMc17L8-5GIkmuJs9qvJrhXIchg3ytJQhtOJfoknq0'
-range_name = 'Sheet1!A3:E'  # 從第三行開始讀取數據
+range_name = 'Sheet1!A3:E'  # Start reading data from the third row
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 service = build('sheets', 'v4', credentials=credentials)
 
-# 用戶嘗試次數記錄
+# User attempt tracking
 attempts = {}
 
 @client.event
@@ -52,7 +52,11 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    channel_id = 1277314657698451506  # 使用您的公共頻道ID
+    if message.content.startswith('!reset_attempts') or message.content.startswith('!reset_role_attempts'):
+        await client.process_commands(message)
+        return
+
+    channel_id = 1277314657698451506  # Your public channel ID
 
     if message.channel.id != channel_id:
         return
@@ -65,7 +69,7 @@ async def on_message(message):
         email = cleaned_content
         member = message.author
 
-        # 限制嘗試次數
+        # Limit attempts
         user_id = str(member.id)
         if user_id not in attempts:
             attempts[user_id] = 0
@@ -106,22 +110,22 @@ async def on_message(message):
                         f"{member.mention}, congratulations! Your verification has been successful. Welcome to our Premium Members Hub!"
                     )
 
-                    matched_row[3] = 'used'  # 標記為已使用
-                    matched_row[4] = str(member.id)  # 添加 Discord ID
+                    matched_row[3] = 'used'  # Mark as used
+                    matched_row[4] = str(member.id)  # Add Discord ID
 
                     cancellation_range = 'Sheet1!H2:J'
                     cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
                     cancellation_values = cancellation_result.get('values', [])
 
                     for j, cancel_row in enumerate(cancellation_values):
-                        if len(cancel_row) > 2 and cancel_row[2].strip().lower() == email.lower():  # 第十列是 Email
+                        if len(cancel_row) > 2 and cancel_row[2].strip().lower() == email.lower():  # Column J is Email
                             cancel_range = f'Sheet1!H{j + 2}:J{j + 2}'
                             clear_body = {
                                 'values': [['', '', '']]
                             }
                             sheet.values().update(spreadsheetId=spreadsheet_id, range=cancel_range, valueInputOption='RAW', body=clear_body).execute()
 
-                    update_range = f'Sheet1!A{matched_row_index + 3}:E{matched_row_index + 3}'  # 修正行數
+                    update_range = f'Sheet1!A{matched_row_index + 3}:E{matched_row_index + 3}'  # Adjust row number
                     body = {
                         'values': [matched_row]
                     }
@@ -137,7 +141,7 @@ async def on_message(message):
             f"{message.author.mention}, please enter a valid email address for verification."
         )
 
-# 設置一個任務來定期檢查取消訂閱的電子郵件
+# Set up a task to periodically check for cancellation emails
 async def check_cancellation_emails():
     while True:
         try:
@@ -184,6 +188,7 @@ async def check_cancellation_emails():
                                     role = discord.utils.get(guild.roles, name='Trade Alerts')
                                     if role:
                                         await member.remove_roles(role)
+                                        await member.send("Your subscription has been canceled, and you have been removed from the 'Trade Alerts' role.")
 
                             update_range = f'Sheet1!A{email_matched_index + 3}:E{email_matched_index + 3}'
                             body = {
@@ -195,35 +200,42 @@ async def check_cancellation_emails():
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
-# 重置特定使用者的嘗試次數
+# Reset the attempts of a specific user
 @client.command()
 @commands.has_permissions(administrator=True)
 async def reset_attempts(ctx, member: discord.Member):
     user_id = str(member.id)
     if user_id in attempts:
         attempts[user_id] = 0
-        await ctx.send(f"{member.mention} 的嘗試次數已經被重置。")
+        await ctx.send(f"{member.mention}, please re-verify your email.")
     else:
-        await ctx.send(f"{member.mention} 尚未進行任何驗證嘗試。")
+        await ctx.send(f"{member.mention} has not made any verification attempts.")
 
-# 重置特定角色的所有成員的嘗試次數
+# Reset the attempts of all members in a specific role
 @client.command()
 @commands.has_permissions(administrator=True)
 async def reset_role_attempts(ctx, role_name: str):
-    # 獲取伺服器中的角色
+    # Get the role from the server
     role = discord.utils.get(ctx.guild.roles, name=role_name)
     if not role:
-        await ctx.send(f"角色 `{role_name}` 不存在。")
+        await ctx.send(f"Role `{role_name}` does not exist.")
         return
 
-    # 遍歷角色中的所有成員，重置他們的測試次數
+    # Loop through all members with the role and reset their attempts
     reset_count = 0
     for member in role.members:
         user_id = str(member.id)
         if user_id in attempts:
             attempts[user_id] = 0
             reset_count += 1
+            await member.send(f"{member.mention}, please re-verify your email.")
 
-    await ctx.send(f"已重置角色 `{role_name}` 中 {reset_count} 位成員的測試次數。")
+    await ctx.send(f"Reset verification attempts for {reset_count} members with the role `{role_name}`.")
+
+@reset_attempts.error
+@reset_role_attempts.error
+async def reset_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send(f"{ctx.author.mention}, you do not have permission to perform this action.")
 
 client.run(DISCORD_TOKEN)
