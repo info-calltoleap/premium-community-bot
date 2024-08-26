@@ -188,7 +188,9 @@ async def check_cancellation_emails():
                                     role = discord.utils.get(guild.roles, name='Trade Alerts')
                                     if role:
                                         await member.remove_roles(role)
-                                        await member.send("Your subscription has been canceled, and you have been removed from the 'Trade Alerts' role.")
+                                        await member.send(
+                                            "Your subscription has been canceled. If you have any questions, please contact our support team at info@calltoleap.com"
+                                        )
 
                             update_range = f'Sheet1!A{email_matched_index + 3}:E{email_matched_index + 3}'
                             body = {
@@ -228,7 +230,7 @@ async def reset_role_attempts(ctx, role_name: str):
         if user_id in attempts:
             attempts[user_id] = 0
             reset_count += 1
-            await member.send(f"{member.mention}, please re-verify your email.")
+            await ctx.send(f"{member.mention}, please re-verify your email.")
 
     await ctx.send(f"Reset verification attempts for {reset_count} members with the role `{role_name}`.")
 
