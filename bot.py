@@ -56,7 +56,7 @@ async def on_message(message):
         await client.process_commands(message)
         return
 
-    channel_id = 1277314657698451506  # Your public channel ID
+    channel_id = 1277310796522848266  # Your public channel ID
 
     if message.channel.id != channel_id:
         return
