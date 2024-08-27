@@ -69,6 +69,9 @@ async def on_message(message):
         email = cleaned_content
         member = message.author
 
+        # Delete the message containing the email
+        await message.delete()
+
         # Limit attempts
         user_id = str(member.id)
         if user_id not in attempts:
@@ -106,7 +109,6 @@ async def on_message(message):
                 role = discord.utils.get(member.guild.roles, name='Trade Alerts')
                 if role:
                     await member.add_roles(role)
-                    await asyncio.sleep(5)  # 延長延遲時間，確保角色正確添加
                     logger.info(f"Added 'Trade Alerts' role to {member.name}.")
 
                     # 再次檢查角色是否成功添加
@@ -136,7 +138,6 @@ async def on_message(message):
                         }
                         sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
 
-                        await asyncio.sleep(1)  # 延迟以确保角色状态已更新
                     else:
                         logger.warning(f"Failed to confirm 'Trade Alerts' role for {member.name} after adding.")
                         await message.channel.send(f"{member.mention}, there was an issue verifying your email. Please try again.")
