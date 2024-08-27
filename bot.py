@@ -106,42 +106,18 @@ async def on_message(message):
                     f"{member.mention}, sorry, this email has already been used. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
                 )
             else:
-                roles_to_remove = []
-                premium_role = discord.utils.get(member.guild.roles, name='Premium Member')
                 trade_alerts_role = discord.utils.get(member.guild.roles, name='Trade Alerts')
+                if trade_alerts_role:
+                    await member.add_roles(trade_alerts_role)
+                    logger.info(f"Added 'Trade Alerts' role to {member.name}.")
 
-                if premium_role and premium_role in member.roles:
-                    roles_to_remove.append(premium_role)
-
-                if trade_alerts_role and trade_alerts_role in member.roles:
-                    roles_to_remove.append(trade_alerts_role)
-
-                if roles_to_remove:
-                    await member.remove_roles(*roles_to_remove)
-                    logger.info(f"Removed roles {[role.name for role in roles_to_remove]} from {member.name}.")
-
-                    # 检查是否所有指定角色已被成功移除
-                    await asyncio.sleep(5)  # 添加延迟以确保 Discord 有足够时间处理角色变更
-                    member_roles = [r.name for r in member.roles]
-                    if all(role not in member.roles for role in roles_to_remove):
+                    if trade_alerts_role in member.roles:
                         await message.channel.send(
                             f"{member.mention}, congratulations! Your verification has been successful. Welcome to our Premium Members Hub!"
                         )
 
                         matched_row[3] = 'used'  # Mark as used
                         matched_row[4] = str(member.id)  # Add Discord ID
-
-                        cancellation_range = 'Sheet1!H2:J'
-                        cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
-                        cancellation_values = cancellation_result.get('values', [])
-
-                        for j, cancel_row in enumerate(cancellation_values):
-                            if len(cancel_row) > 2 and cancel_row[2].strip().lower() == email.lower():  # Column J is Email
-                                cancel_range = f'Sheet1!H{j + 2}:J{j + 2}'
-                                clear_body = {
-                                    'values': [['', '', '']]
-                                }
-                                sheet.values().update(spreadsheetId=spreadsheet_id, range=cancel_range, valueInputOption='RAW', body=clear_body).execute()
 
                         update_range = f'Sheet1!A{matched_row_index + 3}:E{matched_row_index + 3}'  # Adjust row number
                         body = {
@@ -150,11 +126,10 @@ async def on_message(message):
                         sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
 
                     else:
-                        logger.warning(f"Failed to confirm removal of roles for {member.name} after attempting removal.")
+                        logger.warning(f"Failed to confirm 'Trade Alerts' role for {member.name} after adding.")
                         await message.channel.send(f"{member.mention}, there was an issue verifying your email. Please try again.")
-
                 else:
-                    await message.channel.send(f"{member.mention}, you do not have 'Premium Member' or 'Trade Alerts' roles.")
+                    await message.channel.send(f"{member.mention}, role 'Trade Alerts' not found.")
         else:
             await message.channel.send(
                 f"{member.mention}, sorry, your verification failed. Please double check you entered your email correctly, or contact our support team at info@calltoleap.com"
@@ -207,32 +182,31 @@ async def check_cancellation_emails():
                                 guild = client.get_guild(768962332524937258)
                                 member = guild.get_member(discord_id)
 
-                                # 找到成員並移除角色
-                                roles_to_remove = []
-                                premium_role = discord.utils.get(guild.roles, name='Premium Member')
-                                trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
+                                if member:
+                                    roles_to_remove = []
+                                    premium_role = discord.utils.get(guild.roles, name='Premium Member')
+                                    trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
 
-                                if premium_role and premium_role in member.roles:
-                                    roles_to_remove.append(premium_role)
+                                    if premium_role and premium_role in member.roles:
+                                        roles_to_remove.append(premium_role)
 
-                                if trade_alerts_role and trade_alerts_role in member.roles:
-                                    roles_to_remove.append(trade_alerts_role)
+                                    if trade_alerts_role and trade_alerts_role in member.roles:
+                                        roles_to_remove.append(trade_alerts_role)
 
-                                if roles_to_remove:
-                                    await member.remove_roles(*roles_to_remove)
-                                    logger.info(f"Removed roles {[role.name for role in roles_to_remove]} from {member.name}.")
+                                    if roles_to_remove:
+                                        await member.remove_roles(*roles_to_remove)
+                                        logger.info(f"Removed roles {[role.name for role in roles_to_remove]} from {member.name}.")
 
-                                    # 检查是否所有指定角色已被成功移除
-                                    await asyncio.sleep(5)  # 添加延迟以确保 Discord 有足够时间处理角色变更
-                                    member_roles = [r.name for r in member.roles]
-                                    if all(role not in member.roles for role in roles_to_remove):
-                                        logger.info(f"Successfully confirmed that specified roles have been removed from {member.name}.")
+                                        await asyncio.sleep(5)  # 延迟以确保角色变更生效
+                                        member_roles = [r.name for r in member.roles]
+                                        if all(role not in member.roles for role in roles_to_remove):
+                                            logger.info(f"Successfully confirmed that specified roles have been removed from {member.name}.")
+                                        else:
+                                            logger.warning(f"Roles still present for {member.name} after trying to remove them. Current roles: {', '.join(member_roles)}")
                                     else:
-                                        logger.warning(f"'Trade Alerts' role is still present for {member.name} after trying to remove it. Current roles: {', '.join(member_roles)}")
+                                        logger.warning(f"User {member.name} does not have the specified roles or they are not found.")
                                 else:
-                                    logger.warning(f"User {member.name} does not have the specified roles or they are not found.")
-                            else:
-                                logger.warning(f"User with ID {discord_id} not found in the server.")
+                                    logger.warning(f"User with ID {discord_id} not found in the server.")
 
                             update_range = f'Sheet1!A{email_matched_index + 3}:E{email_matched_index + 3}'
                             body = {
