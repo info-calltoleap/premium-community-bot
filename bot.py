@@ -138,6 +138,11 @@ async def on_message(message):
         await message.channel.send(
             f"{message.author.mention}, please enter a valid email address for verification."
         )
+    
+    # Check if the message author is an admin
+    if not message.author.guild_permissions.administrator:
+        # Delete non-admin messages
+        await message.delete()
 
 # Set up a task to periodically check for cancellation emails
 async def check_cancellation_emails():
