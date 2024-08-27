@@ -197,6 +197,15 @@ async def check_cancellation_emails():
                                         await member.remove_roles(*roles_to_remove)
                                         logger.info(f"Removed roles {[role.name for role in roles_to_remove]} from {member.name}.")
 
+                                        # 发送私信通知用户取消订阅
+                                        try:
+                                            await member.send(
+                                                f"Your subscription has been canceled. If you have any questions, please contact our support team at info@calltoleap.com."
+                                            )
+                                            logger.info(f"Sent cancellation message to {member.name}.")
+                                        except discord.Forbidden:
+                                            logger.warning(f"Could not send DM to {member.name}.")
+
                                         await asyncio.sleep(5)  # 延迟以确保角色变更生效
                                         member_roles = [r.name for r in member.roles]
                                         if all(role not in member.roles for role in roles_to_remove):
