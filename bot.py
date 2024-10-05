@@ -55,13 +55,17 @@ async def on_message(message):
     if message.channel.id != channel_id:
         return
 
-    # Remove the message for privacy reasons
-    await message.delete()
+    # 定義機器人的 Discord 使用者 ID
+    bot_ids = [159985870458322944, 1281627943428161536, 1275728804567978005]
 
-    # Skip bot messages from deletion
-    bot_ids = ['1275728804567978005', '1281627943428161536', '159985870458322944']
-    if str(message.author.id) in bot_ids:
+    # Skip messages from the specific bot IDs
+    if message.author.id in bot_ids:
+        logger.info(f"Skipped deleting message from bot {message.author.id}")
         return
+
+    # Remove the message for privacy reasons
+    logger.info(f"Deleting message from {message.author.id} in channel {message.channel.id}")
+    await message.delete()
 
     # Validate the email format
     cleaned_content = message.content.strip().replace('\u200b', '').replace('\n', '').replace('\r', '')
