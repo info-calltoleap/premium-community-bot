@@ -42,16 +42,6 @@ service = build('sheets', 'v4', credentials=credentials)
 @client.event
 async def on_ready():
     logger.info(f'Logged in as {client.user}!')
-    guild = client.get_guild(768962332524937258)  # Replace with your guild ID
-    general_role = discord.utils.get(guild.roles, name="General")
-    
-    # Add "General" role to all existing members
-    for member in guild.members:
-        if not member.bot:
-            if general_role not in member.roles:
-                await member.add_roles(general_role)
-                logger.info(f"Added 'General' role to {member.name}.")
-    
     client.loop.create_task(check_cancellation_emails())
 
 @client.event
