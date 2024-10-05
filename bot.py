@@ -159,9 +159,15 @@ async def check_cancellation_emails():
                         # Find and remove corresponding email in column C
                         for i, row in enumerate(values):
                             if len(row) > 2 and row[2].strip().lower() == cancel_email.lower():
-                                update_range = f'Sheet1!A{i + 3}:E{i + 3}'
-                                body = {'values': [['', '', '', '', '']]}
-                                sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
+                                # Delete corresponding A-E row
+                                update_range_a_e = f'Sheet1!A{i + 3}:E{i + 3}'
+                                body_a_e = {'values': [['', '', '', '', '']]}
+                                sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range_a_e, valueInputOption='RAW', body=body_a_e).execute()
+
+                                # Remove corresponding H-J row
+                                update_range_h_j = f'Sheet1!H{j + 3}:J{j + 3}'
+                                body_h_j = {'values': [['', '', '']]}  # Clear H, I, J columns
+                                sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range_h_j, valueInputOption='RAW', body=body_h_j).execute()
 
                                 # Remove roles from Discord user
                                 if len(row) > 4 and row[4].strip():
