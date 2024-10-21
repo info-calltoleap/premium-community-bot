@@ -185,7 +185,7 @@ async def check_cancellation_emails():
                                             await member.remove_roles(*roles_to_remove)
                                             logger.info(f"Removed roles {[role.name for role in roles_to_remove]} from {member.name}.")
             
-            await asyncio.sleep(60)  # Check every minute
+            await asyncio.sleep(21600)  # Check every 6 hour
         except Exception as e:
             logger.error(f"Error checking cancellation emails: {e}")
 
