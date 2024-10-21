@@ -33,7 +33,7 @@ client = commands.Bot(command_prefix='!', intents=intents)
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'premium-community-bot-api2-16d62f6a46ef.json'
 spreadsheet_id = '1qEMc17L8-5GIkmuJs9qvJrhXIchg3ytJQhtOJfoknq0'
-range_name = 'Sheet1!A3:E'  # Start reading data from the third row
+range_name = 'Discord!A3:E'  # Start reading data from the third row
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE, scopes=SCOPES)
@@ -81,7 +81,7 @@ async def on_message(message):
 
     # Check if email already exists in L and M columns (Discord ID and email logging)
     sheet = service.spreadsheets()
-    check_range = 'Sheet1!L:M'
+    check_range = 'Discord!L:M'
     result = sheet.values().get(spreadsheetId=spreadsheet_id, range=check_range).execute()
     existing_values = result.get('values', [])
 
@@ -94,7 +94,7 @@ async def on_message(message):
     if not email_already_logged:
         # Log Discord ID and email in L and M columns
         new_row = [[str(member.id), email]]
-        append_range = 'Sheet1!L:M'
+        append_range = 'Discord!L:M'
         sheet.values().append(spreadsheetId=spreadsheet_id, range=append_range, valueInputOption='RAW', body={'values': new_row}).execute()
         logger.info(f"Logged {member.name}'s Discord ID and email.")
 
@@ -128,7 +128,7 @@ async def on_message(message):
             matched_row[3] = 'used'
             matched_row[4] = str(member.id)
 
-            update_range = f'Sheet1!A{matched_row_index + 3}:E{matched_row_index + 3}'  # Adjust row number
+            update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'  # Adjust row number
             body = {'values': [matched_row]}
             sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
 
@@ -147,7 +147,7 @@ async def check_cancellation_emails():
             values = result.get('values', [])
 
             # Check for cancellation emails in column J
-            cancellation_range = 'Sheet1!J3:J'
+            cancellation_range = 'Discord!J3:J'
             cancellation_result = sheet.values().get(spreadsheetId=spreadsheet_id, range=cancellation_range).execute()
             cancellation_values = cancellation_result.get('values', [])
 
@@ -160,12 +160,12 @@ async def check_cancellation_emails():
                         for i, row in enumerate(values):
                             if len(row) > 2 and row[2].strip().lower() == cancel_email.lower():
                                 # Delete corresponding A-E row
-                                update_range_a_e = f'Sheet1!A{i + 3}:E{i + 3}'
+                                update_range_a_e = f'Discord!A{i + 3}:E{i + 3}'
                                 body_a_e = {'values': [['', '', '', '', '']]}
                                 sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range_a_e, valueInputOption='RAW', body=body_a_e).execute()
 
                                 # Remove corresponding H-J row
-                                update_range_h_j = f'Sheet1!H{j + 3}:J{j + 3}'
+                                update_range_h_j = f'Discord!H{j + 3}:J{j + 3}'
                                 body_h_j = {'values': [['', '', '']]}  # Clear H, I, J columns
                                 sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range_h_j, valueInputOption='RAW', body=body_h_j).execute()
 
