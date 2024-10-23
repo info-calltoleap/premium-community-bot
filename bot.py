@@ -106,31 +106,39 @@ async def on_message(message):
 if matched_row_index is not None:
     matched_row = values[matched_row_index]
 
-    # 確保 matched_row 有至少 5 個元素，若不足則補空字串
+    # 確保 matched_row 至少有 5 個元素，若不足則補空字串
     while len(matched_row) < 5:
         matched_row.append('')
 
+    # 如果狀態是 'used'
     if matched_row[3].strip() == 'used':
         await message.channel.send(f"{member.mention}, sorry, this email has already been used.")
     else:
+        # 添加角色
         general_role = discord.utils.get(guild.roles, name='General')
         trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
-        await member.add_roles(general_role, trade_alerts_role)
+
+        if general_role:
+            await member.add_roles(general_role)
+        if trade_alerts_role:
+            await member.add_roles(trade_alerts_role)
 
         await message.channel.send(f"{member.mention}, Welcome to our community! Since your monthly plan includes the Member Hub, you now have access to visit these channels!")
 
-        # 更新 Google Sheet 中的狀態為 "used"
+        # 更新 Google Sheet 的 Discord ID 和狀態
         matched_row[3] = 'used'
         matched_row[4] = str(member.id)
 
-        update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'  # 調整為正確的範圍
+        update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'
         body = {'values': [matched_row]}
         sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
-
-    else:
-        general_role = discord.utils.get(guild.roles, name='General')
+else:
+    # 如果找不到 email，添加 General 角色
+    general_role = discord.utils.get(guild.roles, name='General')
+    if general_role:
         await member.add_roles(general_role)
-        await message.channel.send(f"{member.mention}, Welcome to our community! Don’t be shy to interact with us, and feel free to ask any questions or join the conversations!")
+
+    await message.channel.send(f"{member.mention}, Welcome to our community! Don’t be shy to interact with us, and feel free to ask any questions or join the conversations!")
 
 async def check_cancellation_emails():
     while True:
