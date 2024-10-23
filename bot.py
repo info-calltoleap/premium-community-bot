@@ -11,16 +11,13 @@ import re
 # Load .env file
 load_dotenv()
 
-# Read environment variables
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
 if DISCORD_TOKEN is None:
     raise ValueError("DISCORD_TOKEN is not set. Please check your .env file.")
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Set up Discord bot
 intents = discord.Intents.default()
 intents.messages = True
 intents.guilds = True
@@ -29,7 +26,6 @@ intents.message_content = True
 
 client = commands.Bot(command_prefix='!', intents=intents)
 
-# Google Sheets setup
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'premium-community-bot-api2-16d62f6a46ef.json'
 spreadsheet_id = '1qEMc17L8-5GIkmuJs9qvJrhXIchg3ytJQhtOJfoknq0'
@@ -49,12 +45,11 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    channel_id = 1277310796522848266  # Your public channel ID
+    channel_id = 1277310796522848266
     if message.channel.id != channel_id:
         return
 
     bot_ids = [159985870458322944, 1281627943428161536, 1275728804567978005]
-
     specific_message = (
         "Ah, noble seeker of knowledge, your gratitude resonates like the sweet sound of a lute in a grand hall! "
         "However, let us not linger too long in pleasantries, for the quest for wisdom, much like the pursuit of the perfect taco, "
@@ -103,42 +98,36 @@ async def on_message(message):
 
     matched_row_index = next((i for i, row in enumerate(values) if len(row) > 2 and row[2].strip().lower() == email.lower()), None)
 
-if matched_row_index is not None:
-    matched_row = values[matched_row_index]
+    if matched_row_index is not None:
+        matched_row = values[matched_row_index]
+        while len(matched_row) < 5:
+            matched_row.append('')
 
-    # 確保 matched_row 至少有 5 個元素，若不足則補空字串
-    while len(matched_row) < 5:
-        matched_row.append('')
+        if matched_row[3].strip() == 'used':
+            await message.channel.send(f"{member.mention}, sorry, this email has already been used.")
+        else:
+            general_role = discord.utils.get(guild.roles, name='General')
+            trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
 
-    # 如果狀態是 'used'
-    if matched_row[3].strip() == 'used':
-        await message.channel.send(f"{member.mention}, sorry, this email has already been used.")
+            if general_role:
+                await member.add_roles(general_role)
+            if trade_alerts_role:
+                await member.add_roles(trade_alerts_role)
+
+            await message.channel.send(f"{member.mention}, Welcome to our community! Since your monthly plan includes the Member Hub, you now have access to visit these channels!")
+
+            matched_row[3] = 'used'
+            matched_row[4] = str(member.id)
+
+            update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'
+            body = {'values': [matched_row]}
+            sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
     else:
-        # 添加角色
         general_role = discord.utils.get(guild.roles, name='General')
-        trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
-
         if general_role:
             await member.add_roles(general_role)
-        if trade_alerts_role:
-            await member.add_roles(trade_alerts_role)
 
-        await message.channel.send(f"{member.mention}, Welcome to our community! Since your monthly plan includes the Member Hub, you now have access to visit these channels!")
-
-        # 更新 Google Sheet 的 Discord ID 和狀態
-        matched_row[3] = 'used'
-        matched_row[4] = str(member.id)
-
-        update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'
-        body = {'values': [matched_row]}
-        sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
-else:
-    # 如果找不到 email，添加 General 角色
-    general_role = discord.utils.get(guild.roles, name='General')
-    if general_role:
-        await member.add_roles(general_role)
-
-    await message.channel.send(f"{member.mention}, Welcome to our community! Don’t be shy to interact with us, and feel free to ask any questions or join the conversations!")
+        await message.channel.send(f"{member.mention}, Welcome to our community! Don’t be shy to interact with us, and feel free to ask any questions or join the conversations!")
 
 async def check_cancellation_emails():
     while True:
