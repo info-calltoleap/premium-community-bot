@@ -103,24 +103,30 @@ async def on_message(message):
 
     matched_row_index = next((i for i, row in enumerate(values) if len(row) > 2 and row[2].strip().lower() == email.lower()), None)
 
-    if matched_row_index is not None:
-        matched_row = values[matched_row_index]
-        matched_row.extend([''] * (5 - len(matched_row))
+if matched_row_index is not None:
+    matched_row = values[matched_row_index]
 
-        if matched_row[3].strip() == 'used':
-            await message.channel.send(f"{member.mention}, sorry, this email has already been used.")
-        else:
-            general_role = discord.utils.get(guild.roles, name='General')
-            trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
-            await member.add_roles(general_role, trade_alerts_role)
+    # 確保 matched_row 有至少 5 個元素，若不足則補空字串
+    while len(matched_row) < 5:
+        matched_row.append('')
 
-            await message.channel.send(f"{member.mention}, Welcome to our community! Since your monthly plan includes the Member Hub, you now have access to visit these channels!")
+    if matched_row[3].strip() == 'used':
+        await message.channel.send(f"{member.mention}, sorry, this email has already been used.")
+    else:
+        general_role = discord.utils.get(guild.roles, name='General')
+        trade_alerts_role = discord.utils.get(guild.roles, name='Trade Alerts')
+        await member.add_roles(general_role, trade_alerts_role)
 
-            matched_row[3] = 'used'
-            matched_row[4] = str(member.id)
-            update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'
-            body = {'values': [matched_row]}
-            sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
+        await message.channel.send(f"{member.mention}, Welcome to our community! Since your monthly plan includes the Member Hub, you now have access to visit these channels!")
+
+        # 更新 Google Sheet 中的狀態為 "used"
+        matched_row[3] = 'used'
+        matched_row[4] = str(member.id)
+
+        update_range = f'Discord!A{matched_row_index + 3}:E{matched_row_index + 3}'  # 調整為正確的範圍
+        body = {'values': [matched_row]}
+        sheet.values().update(spreadsheetId=spreadsheet_id, range=update_range, valueInputOption='RAW', body=body).execute()
+
     else:
         general_role = discord.utils.get(guild.roles, name='General')
         await member.add_roles(general_role)
