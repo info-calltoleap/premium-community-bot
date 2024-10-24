@@ -114,7 +114,7 @@ async def on_message(message):
             if trade_alerts_role:
                 await member.add_roles(trade_alerts_role)
 
-            await message.channel.send(f"{member.mention}, Welcome to our community! Since your monthly plan includes the Member Hub, you now have access to visit these channels!")
+            await message.channel.send(f"{member.mention}, Welcome to our community! Since your plan includes the Member Hub, you now have access to visit these channels!")
 
             matched_row[3] = 'used'
             matched_row[4] = str(member.id)
